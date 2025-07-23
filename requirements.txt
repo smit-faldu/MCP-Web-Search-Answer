@@ -1,0 +1,19 @@
+# Core MCP and FastMCP
+mcp
+fastmcp
+
+# LangChain and LangGraph
+langchain
+langchain-google-genai
+langgraph
+
+# Google Gemini
+google-generativeai
+
+# SerpAPI
+google-search-results
+
+# Environment and utilities
+python-dotenv
+pydantic
+typing-extensions

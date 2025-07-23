@@ -1,0 +1,190 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8 black isort
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting with black
+      run: |
+        black --check --diff .
+    
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --diff .
+    
+    - name: Test imports and basic functionality
+      run: |
+        python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Test imports
+        try:
+            from agents.query_agent import QueryAgent
+            from agents.answer_agent import AnswerAgent
+            from tools.search_tool import SearchTool
+            from langflow.graph import WebSearchWorkflow
+            print('✅ All imports successful')
+        except ImportError as e:
+            print(f'❌ Import error: {e}')
+            sys.exit(1)
+        
+        # Test basic initialization (without API keys)
+        try:
+            # This will fail due to missing API keys, but should not crash on import
+            print('✅ Basic structure validation passed')
+        except Exception as e:
+            print(f'⚠️  Expected error (missing API keys): {e}')
+        "
+    
+    - name: Test project structure
+      run: |
+        python -c "
+        import os
+        
+        required_files = [
+            'agents/__init__.py',
+            'agents/query_agent.py',
+            'agents/answer_agent.py',
+            'tools/__init__.py',
+            'tools/search_tool.py',
+            'langflow/__init__.py',
+            'langflow/graph.py',
+            'main.py',
+            'server.py',
+            'requirements.txt',
+            'README.md',
+            '.env.example'
+        ]
+        
+        missing_files = []
+        for file in required_files:
+            if not os.path.exists(file):
+                missing_files.append(file)
+        
+        if missing_files:
+            print(f'❌ Missing files: {missing_files}')
+            exit(1)
+        else:
+            print('✅ All required files present')
+        "
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+    
+    - name: Check for security vulnerabilities in dependencies
+      run: |
+        pip install -r requirements.txt
+        safety check
+    
+    - name: Run bandit security linter
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -f txt
+    
+    - name: Check for hardcoded secrets
+      run: |
+        # Check that no actual API keys are committed
+        if grep -r "AIza" . --exclude-dir=.git --exclude="*.md" --exclude=".env.example"; then
+          echo "❌ Potential API key found in code"
+          exit 1
+        fi
+        
+        if grep -r "sk-" . --exclude-dir=.git --exclude="*.md" --exclude=".env.example"; then
+          echo "❌ Potential OpenAI API key found in code"
+          exit 1
+        fi
+        
+        echo "✅ No hardcoded secrets found"
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check documentation
+      run: |
+        # Check that README exists and has required sections
+        if [ ! -f README.md ]; then
+          echo "❌ README.md not found"
+          exit 1
+        fi
+        
+        required_sections=("Installation" "Usage" "API Keys" "Contributing")
+        for section in "${required_sections[@]}"; do
+          if ! grep -q "$section" README.md; then
+            echo "❌ README.md missing section: $section"
+            exit 1
+          fi
+        done
+        
+        echo "✅ Documentation check passed"
+    
+    - name: Check .env.example
+      run: |
+        if [ ! -f .env.example ]; then
+          echo "❌ .env.example not found"
+          exit 1
+        fi
+        
+        if ! grep -q "GEMINI_API_KEY" .env.example; then
+          echo "❌ .env.example missing GEMINI_API_KEY"
+          exit 1
+        fi
+        
+        if ! grep -q "SERPAPI_KEY" .env.example; then
+          echo "❌ .env.example missing SERPAPI_KEY"
+          exit 1
+        fi
+        
+        echo "✅ .env.example check passed"

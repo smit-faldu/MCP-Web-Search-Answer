@@ -1,0 +1,17 @@
+version: 1
+initial: query_agent
+participants:
+  query_agent:
+    type: agent
+    input_type: text
+    output_type: text
+
+  search_tool:
+    type: tool
+    input_type: text
+    output_type: text
+
+  answer_agent:
+    type: agent
+    input_type: text
+    output_type: text

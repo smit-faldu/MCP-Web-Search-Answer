@@ -1,0 +1,1 @@
+# Agents package for MCP Web Search Answer application
