@@ -1,0 +1,162 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-web-search-answer"
+version = "1.0.0"
+description = "A minimal working Python application using OpenAI's Model Context Protocol (MCP) with web search capabilities"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "MCP Web Search Answer Team", email = "your-email@example.com"}
+]
+maintainers = [
+    {name = "MCP Web Search Answer Team", email = "your-email@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["mcp", "model-context-protocol", "ai", "llm", "web-search", "gemini", "langchain", "langgraph"]
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=1.12.0",
+    "fastmcp>=2.10.0",
+    "langchain>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "langgraph>=0.5.0",
+    "google-generativeai>=0.8.0",
+    "google-search-results>=2.4.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+docker = [
+    "gunicorn>=21.0.0",
+    "uvicorn[standard]>=0.23.0",
+]
+monitoring = [
+    "prometheus-client>=0.17.0",
+    "structlog>=23.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/mcp_web_search_answer"
+Documentation = "https://github.com/yourusername/mcp_web_search_answer#readme"
+Repository = "https://github.com/yourusername/mcp_web_search_answer"
+"Bug Tracker" = "https://github.com/yourusername/mcp_web_search_answer/issues"
+Changelog = "https://github.com/yourusername/mcp_web_search_answer/blob/main/CHANGELOG.md"
+
+[project.scripts]
+mcp-web-search = "main:main"
+mcp-server = "server:main"
+
+[tool.setuptools]
+packages = ["agents", "tools", "langflow"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.txt", "*.md"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["agents", "tools", "langflow"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "google.generativeai.*",
+    "serpapi.*",
+    "langchain.*",
+    "langgraph.*",
+    "mcp.*",
+    "fastmcp.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["agents", "tools", "langflow", "main", "server"]
+omit = ["tests/*", "setup.py", ".venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
